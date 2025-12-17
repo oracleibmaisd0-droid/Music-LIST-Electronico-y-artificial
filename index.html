@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L: Armónico</title>
+<link rel="icon" href="https://img.icons8.com/fluency/10000/apple-music.png">
+<style>
+  html, body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: #000;
+    font-family: Arial;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 80px;
+  }
+  .musicCard {
+    background: #111;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .responsive-canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border-radius: 10px;
+    background: #000;
+  }
+  .floatingButtons {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: rgba(25,25,25,0.8);
+    border-radius: 12px;
+    padding: 8px 15px;
+    display: flex;
+    gap: 10px;
+  }
+  .floatingButtons button {
+    background: #222;
+    color: white;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
+  }
+  .floatingButtons button:hover { border-color: #00aaff; }
+  .floatingButtons button:active { transform: scale(0.97); }
+  .fileNameDisplay { font-size: 12px; margin: 5px 0; color: #fff; text-align:center; }
+
+  .progress-container {
+    width: 100%;
+    height: 18px;
+    background: #222;
+    border-radius: 9px;
+    overflow: hidden;
+    margin-top: 5px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    position: relative;
+  }
+  .progress-container.show { opacity: 1; }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #00aaff;
+    border-radius: 9px 0 0 9px;
+    transition: width 0.1s linear, background 0.5s ease;
+  }
+  .progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    color: #fff;
+    top: 0;
+    line-height: 18px;
+    pointer-events: none;
+  }
+
+  h4 { text-align:justify; }
+</style>
+</head>
+<body>
+
+<h2>Lista: Electrónico y artificial</h2>
+<h4>Para reproducir desde una pista diferente pulse sobre ella.</h4>
+
+<div class="floatingButtons">
+  <button id="playAllBtn">Play</button>
+  <button id="stopAllBtn">Stop</button>
+</div>
+
+<div class="gallery" id="playlist">
+  <div class="musicCard" data-audio="https://dl.dropboxusercontent.com/scl/fi/kzywse7q0xyw275wrqs7f/MettaKin-_-The-Call.mp3?rlkey=gj46311jlwdl3djv06cp57if3&st=oqf2l293">
+    <canvas class="responsive-canvas"></canvas>
+    <div class="fileNameDisplay"></div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+      <div class="progress-text">Cargando…</div>
+    </div>
+  </div>
+  <div class="musicCard" data-audio="https://dl.dropboxusercontent.com/scl/fi/8r5vy96edc58c7ni6ycx5/Skrillex-_-Fred-again-And-Flowdan-_-Rumble.mp3?rlkey=l1l6a0vnomxqdlxzp4zvgnfyk">
+    <canvas class="responsive-canvas"></canvas>
+    <div class="fileNameDisplay"></div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+      <div class="progress-text">Cargando…</div>
+    </div>
+  </div>
+  <div class="musicCard" data-audio="https://dl.dropboxusercontent.com/scl/fi/n12bg9jgl31pxtgbj56c2/Papatinho-feat-_-Steve-Aoki-_-Kevin-O-Chris-_-Anitta-_-Caverinha.mp3?rlkey=9wgzrf0gomymvp2g96hnt9sz6">
+    <canvas class="responsive-canvas"></canvas>
+    <div class="fileNameDisplay"></div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+      <div class="progress-text">Cargando…</div>
+    </div>
+  </div>
+  <div class="musicCard" data-audio="https://dl.dropboxusercontent.com/scl/fi/ejome0wnkeq5nywx348jw/Fils-des-Etoiles-_-The-Light-From-The-Unknown.mp3?rlkey=92b7kr8s5bnkzaoq1syj6ystg">
+    <canvas class="responsive-canvas"></canvas>
+    <div class="fileNameDisplay"></div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+      <div class="progress-text">Cargando…</div>
+    </div>
+  </div>
+  <div class="musicCard" data-audio="https://dl.dropboxusercontent.com/scl/fi/4b0jkhfhywwt572o883e9/Human-_-Rex-Banner.mp3?rlkey=vt8h5b280e9ji7ma98bbyvhjq">
+    <canvas class="responsive-canvas"></canvas>
+    <div class="fileNameDisplay"></div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+      <div class="progress-text">Cargando…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mostrar nombres de archivo
+document.querySelectorAll(".musicCard").forEach(card => {
+  const box = card.querySelector(".fileNameDisplay");
+  if(card.dataset.audio){
+    let cleanName = decodeURIComponent(card.dataset.audio.split("/").pop().split(".mp3")[0]);
+    cleanName = cleanName.replace(/-/g," ");
+    box.textContent = cleanName;
+  }
+});
+
+// Variables
+const baseColors = [[255,0,0],[255,127,0],[255,255,0],[0,255,0],[0,0,255],[75,0,130],[148,0,211]];
+let audioContext, analyser, gainNode, sourceNode;
+let currentIndex = -1;
+let playlist = Array.from(document.querySelectorAll(".musicCard"));
+let rotation=0, lastDirection=1, lastPeak=0;
+let globalOpacity=0, fadingIn=false, fadingOut=false;
+const FADE_SPEED=0.03, FADE_AUDIO_TIME=1.0;
+
+// Configurar canvas
+playlist.forEach(card => {
+  const canvas = card.querySelector("canvas");
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientWidth;
+  window.addEventListener('resize', () => {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientWidth;
+  });
+});
+
+// Dibujar arco
+function drawArcSegment(ctx,cx,cy,radius,start,end,color){
+  ctx.beginPath();
+  ctx.lineWidth=20;
+  ctx.strokeStyle=color;
+  ctx.arc(cx,cy,radius,start,end);
+  ctx.stroke();
+}
+
+// Inicializa colores para suavizado
+let currentColors = baseColors.map(c => [...c]);
+
+// Visualizador
+function drawVisualizer(){
+  requestAnimationFrame(drawVisualizer);
+  if(!analyser && !fadingOut) return;
+
+  if(fadingIn && globalOpacity<1) globalOpacity+=FADE_SPEED;
+  if(fadingOut && globalOpacity>0) globalOpacity-=FADE_SPEED;
+  globalOpacity=Math.max(0,Math.min(1,globalOpacity));
+
+  playlist.forEach(card=>{
+    const ctx = card.querySelector("canvas").getContext("2d");
+    ctx.clearRect(0,0,card.querySelector("canvas").width,card.querySelector("canvas").height);
+  });
+
+  if(currentIndex<0 && globalOpacity<=0) return;
+
+  const card = playlist[currentIndex];
+  const canvas = card.querySelector("canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.globalAlpha = globalOpacity;
+
+  if(!analyser) return;
+
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  const blockSize = Math.floor(data.length/baseColors.length);
+  const noteAmps = baseColors.map((_,i)=>{
+    let sum=0; for(let j=0;j<blockSize;j++) sum+=data[i*blockSize+j]; return sum/blockSize;
+  });
+  const totalAmp = noteAmps.reduce((a,b)=>a+b,1);
+  const avgAmp = totalAmp / noteAmps.length;
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  const baseRadius = 80 + totalAmp/15;
+
+  let peak=Math.max(...noteAmps);
+  if(peak-lastPeak>15) lastDirection*=-1;
+  lastPeak=peak;
+
+  const speed = 0.005 + (avgAmp/200)*(0.04-0.005);
+  rotation += lastDirection*Math.min(speed,0.04);
+
+  const time = audioContext.currentTime*0.5;
+
+  // Colores objetivo
+  const targetColors = baseColors.map((c,i)=>{
+    const r=(c[0]+Math.sin(time+i)*100)%256;
+    const g=(c[1]+Math.sin(time+i+1)*100)%256;
+    const b=(c[2]+Math.sin(time+i+2)*100)%256;
+    return [r,g,b];
+  });
+
+  // Suavizado
+  const smoothFactor = 0.05;
+  currentColors = currentColors.map((c,i)=>[
+    c[0] + (targetColors[i][0]-c[0])*smoothFactor,
+    c[1] + (targetColors[i][1]-c[1])*smoothFactor,
+    c[2] + (targetColors[i][2]-c[2])*smoothFactor
+  ]);
+
+  const parts=currentColors.map((color,i)=>({ratio:noteAmps[i]/totalAmp,color})).filter(p=>p.ratio>0);
+  const totalActive = parts.reduce((a,e)=>a+e.ratio,0);
+  parts.forEach(p=>p.ratio/=totalActive);
+
+  let acc=0;
+  for(let i=0;i<parts.length;i++){
+    const p=parts[i];
+    const start=rotation+Math.PI*2*acc;
+    acc+=p.ratio;
+    const end=rotation+Math.PI*2*acc;
+    const subSegs=50;
+    for(let s=0;s<subSegs;s++){
+      const t=s/subSegs;
+      const nextColor=parts[(i+1)%parts.length].color;
+      const r=p.color[0]*(1-t)+nextColor[0]*t;
+      const g=p.color[1]*(1-t)+nextColor[1]*t;
+      const b=p.color[2]*(1-t)+nextColor[2]*t;
+      drawArcSegment(ctx,cx,cy,baseRadius,start+(end-start)*s/subSegs,start+(end-start)*(s+1)/subSegs,`rgb(${r},${g},${b})`);
+    }
+  }
+  ctx.globalAlpha=1;
+}
+drawVisualizer();
+
+// Auto-scroll
+function scrollToCard(index){
+  const card = playlist[index];
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Reproducción
+let downloading=false;
+async function playTrack(index){
+  if(index >= playlist.length || downloading) return;
+  downloading=true;
+  const card = playlist[index];
+  const progressContainer = card.querySelector(".progress-container");
+  const progressBar = card.querySelector(".progress-bar");
+  const progressText = card.querySelector(".progress-text");
+
+  progressContainer.classList.add("show");
+  progressBar.style.width = "0%";
+  progressBar.style.background = "#00aaff";
+  progressText.textContent = "Cargando…";
+
+  const startTrack = async ()=>{
+    currentIndex = index;
+    scrollToCard(currentIndex);
+    try {
+      if(audioContext) await audioContext.close();
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      gainNode = audioContext.createGain();
+      gainNode.gain.value = 1;
+
+      const response = await fetch(card.dataset.audio);
+      const contentLength = +response.headers.get("Content-Length") || 1;
+      const reader = response.body.getReader();
+      let receivedLength = 0;
+      const chunks = [];
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        chunks.push(value);
+        receivedLength += value.length;
+        let percent = Math.floor(receivedLength / contentLength * 100);
+        progressBar.style.width = percent + "%";
+      }
+
+      progressBar.style.background = "#00ff00";
+      progressText.textContent = "Listo. PROCESANDO…";
+
+      const audioData = new Uint8Array(receivedLength);
+      let pos = 0;
+      for(let chunk of chunks){
+        audioData.set(chunk,pos);
+        pos += chunk.length;
+      }
+
+      const audioBuffer = await audioContext.decodeAudioData(audioData.buffer);
+      sourceNode = audioContext.createBufferSource();
+      sourceNode.buffer = audioBuffer;
+      sourceNode.connect(gainNode);
+      gainNode.connect(analyser);
+      analyser.connect(audioContext.destination);
+      sourceNode.start();
+      fadingIn = true; fadingOut = false; globalOpacity = 0;
+
+      progressContainer.classList.remove("show");
+      downloading=false;
+
+      sourceNode.onended = ()=>{
+        fadingOut = true; fadingIn = false;
+        const fadeCheck = setInterval(()=>{
+          if(globalOpacity <= 0){
+            clearInterval(fadeCheck);
+            sourceNode = null; gainNode = null;
+            if(audioContext){ audioContext.close(); audioContext = null; }
+            playTrack(currentIndex + 1);
+          }
+        },10);
+      };
+
+    } catch(err){
+      console.error(err);
+      progressBar.style.background = "#ff0000";
+      progressText.textContent = "Error";
+      downloading=false;
+    }
+  };
+
+  if(sourceNode){
+    fadingOut = true; fadingIn = false;
+    const checkFade = setInterval(()=>{
+      if(globalOpacity <= 0){
+        clearInterval(checkFade);
+        try{ sourceNode.stop(); }catch(e){}
+        sourceNode = null; gainNode = null; 
+        if(audioContext){ audioContext.close(); audioContext=null; }
+        startTrack();
+      }
+    },10);
+  } else startTrack();
+}
+
+// Botones flotantes
+document.getElementById("playAllBtn").onclick = ()=>{ playTrack(currentIndex>=0?currentIndex:0); };
+document.getElementById("stopAllBtn").onclick = ()=>{
+  if(!audioContext && !globalOpacity) return;
+  fadingOut=true; fadingIn=false;
+  const fadeStop = setInterval(()=>{
+    if(globalOpacity<=0){
+      clearInterval(fadeStop);
+      try{ if(sourceNode) sourceNode.stop(); }catch(e){}
+      sourceNode=null; gainNode=null;
+      if(audioContext){ audioContext.close(); audioContext=null; }
+      currentIndex=-1;
+    }
+  },10);
+};
+
+// Click en cada card
+playlist.forEach((card,i)=>{ card.onclick=()=>{ playTrack(i); }; });
+</script>
+
+</body>
+</html>
